@@ -113,7 +113,6 @@ def main():
 			# swap memory info
 			elif 'SwapTotal' in meminfo_line:
 				meminfo_line = meminfo_line.split(':')
-
 				info['memory']['swap_total'] = (int(meminfo_line[1].strip().split(' ')[0]) * 1024)
 
 			elif 'SwapFree' in meminfo_line:
@@ -121,9 +120,12 @@ def main():
 
 				info['memory']['swap_free'] = (int(meminfo_line[1].strip().split(' ')[0]) * 1024)
 
+	# calculate used memory
 	info['memory']['used'] = (info['memory']['total'] - (info['memory']['free'] + info['memory']['cached']))
 
-	info['memory']['swap_used'] = (info['memory']['swap_total'] - info['memory']['swap_free'])
+	# calculate used swap if it is being used ( >0 )
+	if info['memory']['swap_total'] > 0:
+		info['memory']['swap_used'] = (info['memory']['swap_total'] - info['memory']['swap_free'])
 
 	# get disk info
 	info['disk'] = {}
@@ -194,43 +196,47 @@ def main():
 
 	print(' RAM\t\t[' + colours[ram_colour] + ram_bar + colours['reset'] + ram_bar_free + '] (' + pretty_free_ram + ' / ' + pretty_total_ram + ' ' + pretty_ram_symbol + 'B' + ')')
 
-	# display swap usage as a bar
-	# calculate colour of bar depending on usage
+	# check if server is using swap first
+	if info['memory']['swap_total'] > 0:
 
-	if info['memory']['swap_used'] >= (info['memory']['swap_total'] * 0.8):
-		swap_colour = 'red'
+		# display swap usage as a bar
+		# calculate colour of bar depending on usage
 
-	elif info['memory']['swap_used'] >= (info['memory']['swap_total'] * 0.6):
-		swap_colour = 'yellow'
+		if info['memory']['swap_used'] >= (info['memory']['swap_total'] * 0.8):
+			swap_colour = 'red'
 
-	else:
-		swap_colour = 'green'
+		elif info['memory']['swap_used'] >= (info['memory']['swap_total'] * 0.6):
+			swap_colour = 'yellow'
 
-	swap_block_size = math.floor(info['memory']['swap_total'] / block_size)
+		else:
+			swap_colour = 'green'
 
-	swap_used_blocks = math.floor(info['memory']['swap_used'] / swap_block_size)
+		swap_block_size = math.floor(info['memory']['swap_total'] / block_size)
 
-	swap_free_blocks = (block_size - swap_used_blocks)
+		swap_used_blocks = math.floor(info['memory']['swap_used'] / swap_block_size)
 
-	swap_bar =''
-	swap_bar_free = ''
+		swap_free_blocks = (block_size - swap_used_blocks)
 
-	for x in range(swap_used_blocks):
-		swap_bar += '#'
+		swap_bar =''
+		swap_bar_free = ''
 
-	for y in range(swap_free_blocks):
-		swap_bar_free += '-'
+		for x in range(swap_used_blocks):
+			swap_bar += '#'
 
-	if (info['memory']['swap_total'] >= 1073741824):
-		pretty_free_swap = str(round(info['memory']['swap_used'] / 1073741824, 2))
-		pretty_total_swap = str(round(info['memory']['swap_total'] / 1073741824, 2))
-		pretty_swap_symbol = 'G'
-	else:
-		pretty_free_swap = str(round(info['memory']['swap_used'] / 1048576, 2))
-		pretty_total_swap = str(round(info['memory']['swap_total'] / 1048576, 2))
-		pretty_swap_symbol = 'M'
+		for y in range(swap_free_blocks):
+			swap_bar_free += '-'
 
-	print(' Swap\t\t[' + colours[swap_colour] + swap_bar + colours['reset'] + swap_bar_free + '] (' + pretty_free_swap + ' / ' + pretty_total_swap + ' ' + pretty_swap_symbol + 'B' + ')')
+
+		if (info['memory']['swap_total'] >= 1073741824):
+			pretty_free_swap = str(round(info['memory']['swap_used'] / 1073741824, 2))
+			pretty_total_swap = str(round(info['memory']['swap_total'] / 1073741824, 2))
+			pretty_swap_symbol = 'G'
+		else:
+			pretty_free_swap = str(round(info['memory']['swap_used'] / 1048576, 2))
+			pretty_total_swap = str(round(info['memory']['swap_total'] / 1048576, 2))
+			pretty_swap_symbol = 'M'
+
+		print(' Swap\t\t[' + colours[swap_colour] + swap_bar + colours['reset'] + swap_bar_free + '] (' + pretty_free_swap + ' / ' + pretty_total_swap + ' ' + pretty_swap_symbol + 'B' + ')')
 
 	print('\n' + ' ==== Disk Usage ==============================================================' + '\n')
 
